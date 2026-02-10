@@ -37,14 +37,28 @@ const Particle = ({ x, y, color }: { x: number; y: number; color: string }) => {
   )
 }
 
+// Safe positions for No button — all in the lower portion of the card,
+// far from the Yes button which sits at the top-center of buttonArea
+const NO_ZONES = [
+  { top: 78, left: 10 },
+  { top: 78, left: 68 },
+  { top: 88, left: 18 },
+  { top: 88, left: 58 },
+  { top: 68, left: 8  },
+  { top: 68, left: 74 },
+  { top: 93, left: 38 },
+  { top: 73, left: 44 },
+]
+
 const Home: NextPage = () => {
-  const [answer, setAnswer] = useState<null | 'yes' | 'no'>(null)
+  const [answer, setAnswer] = useState<null | 'yes'>(null)
   const [noCount, setNoCount] = useState(0)
-  const [noPosition, setNoPosition] = useState({ top: '50%', left: '60%' })
+  const [noPosition, setNoPosition] = useState({ top: '78%', left: '68%' })
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([])
   const [hearts, setHearts] = useState<{ id: number; delay: number; left: number; size: number; duration: number }[]>([])
   const [showContent, setShowContent] = useState(false)
   const yesRef = useRef<HTMLButtonElement>(null)
+  const lastZoneRef = useRef(1)
 
   const noMessages = [
     'Nope! Try again 😄',
@@ -61,7 +75,6 @@ const Home: NextPage = () => {
   ]
 
   useEffect(() => {
-    // Generate floating hearts
     const newHearts = Array.from({ length: 15 }, (_, i) => ({
       id: i,
       delay: Math.random() * 8,
@@ -70,10 +83,27 @@ const Home: NextPage = () => {
       duration: 6 + Math.random() * 6,
     }))
     setHearts(newHearts)
-
-    // Staggered entrance
     setTimeout(() => setShowContent(true), 100)
   }, [])
+
+  const pickNewPosition = () => {
+    let idx = lastZoneRef.current
+    while (idx === lastZoneRef.current) {
+      idx = Math.floor(Math.random() * NO_ZONES.length)
+    }
+    lastZoneRef.current = idx
+    const zone = NO_ZONES[idx]
+    return { top: `${zone.top}%`, left: `${zone.left}%` }
+  }
+
+  const handleNoHover = () => {
+    setNoPosition(pickNewPosition())
+  }
+
+  const handleNo = () => {
+    setNoCount((c) => c + 1)
+    setNoPosition(pickNewPosition())
+  }
 
   const handleYes = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -91,40 +121,25 @@ const Home: NextPage = () => {
     setAnswer('yes')
   }
 
-  const handleNo = () => {
-    const count = noCount + 1
-    setNoCount(count)
-
-    // Make the "No" button run away to a random position
-    const top = 20 + Math.random() * 55
-    const left = 10 + Math.random() * 70
-    setNoPosition({ top: `${top}%`, left: `${left}%` })
-
-    // Make the Yes button slightly bigger each time
-  }
-
-  const noButtonScale = Math.max(0.3, 1 - noCount * 0.08)
+  const noButtonScale = Math.max(0.4, 1 - noCount * 0.07)
   const yesButtonScale = Math.min(1.6, 1 + noCount * 0.08)
 
   return (
     <>
       <Head>
-        <title>Eva 💝 Will You Be My Valentine?</title>
-        <meta name="description" content="A special question for Eva 💕" />
+        <title>Eva Will You Be My Valentine?</title>
+        <meta name="description" content="A special question for Eva" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💝</text></svg>" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
       </Head>
 
       <div className={styles.container}>
-        {/* Floating hearts background */}
         {hearts.map((h) => (
           <FloatingHeart key={h.id} delay={h.delay} left={h.left} size={h.size} duration={h.duration} />
         ))}
 
-        {/* Burst particles */}
         {particles.map((p) => (
           <Particle key={p.id} x={p.x} y={p.y} color={p.color} />
         ))}
@@ -134,17 +149,13 @@ const Home: NextPage = () => {
             <div className={styles.bigHeart}>💝</div>
             <h1 className={styles.yesTitle}>She Said YES! 🎉</h1>
             <p className={styles.yesMessage}>
-              Eva, you've made me the happiest person in the world.
+              Eva, you&apos;ve made me the happiest person in the world.
               <br />
-              <span className={styles.italic}>Happy Valentine's Day, my love. 🌹</span>
+              <span className={styles.italic}>Happy Valentine&apos;s Day, my love. 🌹</span>
             </p>
             <div className={styles.heartRow}>
-              {'💖💕💗💓💞💘💝'.split('').map((h, i) => (
-                <span
-                  key={i}
-                  className={styles.celebrationHeart}
-                  style={{ animationDelay: `${i * 0.1}s` }}
-                >
+              {['💖','💕','💗','💓','💞','💘','💝'].map((h, i) => (
+                <span key={i} className={styles.celebrationHeart} style={{ animationDelay: `${i * 0.1}s` }}>
                   {h}
                 </span>
               ))}
@@ -163,7 +174,7 @@ const Home: NextPage = () => {
               <br />a page from the most beautiful story.
               <br />
               <span className={styles.italic}>
-                This Valentine's Day, I have one
+                This Valentine&apos;s Day, I have one
                 <br />
                 very important question...
               </span>
@@ -188,12 +199,12 @@ const Home: NextPage = () => {
               <button
                 className={styles.noBtn}
                 onClick={handleNo}
+                onMouseEnter={handleNoHover}
                 style={{
-                  position: 'absolute',
                   top: noPosition.top,
                   left: noPosition.left,
-                  transform: `scale(${noButtonScale})`,
-                  opacity: noButtonScale,
+                  transform: `translate(-50%, -50%) scale(${noButtonScale})`,
+                  opacity: Math.max(0.65, noButtonScale),
                 }}
               >
                 {noCount === 0 ? 'No 😐' : noMessages[Math.min(noCount - 1, noMessages.length - 1)]}
